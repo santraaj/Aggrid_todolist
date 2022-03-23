@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import './App.css';
 import { AgGridReact } from 'ag-grid-react';
 import 'ag-grid-community/dist/styles/ag-grid.css';
@@ -7,6 +7,7 @@ import 'ag-grid-community/dist/styles/ag-theme-material.css';
 function Todolist() {
   const [todo, setTodo] = useState({description: '', date: '', priority:''});
   const [todos, setTodos] = useState([]);
+  const gridRef = useRef();
 
   const inputChanged = (event) => {
     setTodo({...todo, [event.target.name]: event.target.value});
@@ -16,10 +17,21 @@ function Todolist() {
     setTodos([...todos, todo]);
   }
 
+  const deleteTodo = () => {
+    if (gridRef.current.getSelectedNodes().length > 0) {
+      setTodos(todos.filter((todo, index) =>
+        index !== gridRef.current.getSelectedNodes()[0].childIndex))
+      }
+    else {
+      alert('Select a row first!');
+    }
+  }
+
   const columns = [
-    { headerName: 'Date', field: 'date' },
-    { headerName: 'Description', field: 'description' },
-    { headerName: 'Priority', field: 'priority' }
+    { headerName: 'Date', field: 'date', sortable: true, filter: true },
+    { headerName: 'Description', field: 'description', sortable: true, filter: true },
+    { headerName: 'Priority', field: 'priority', sortable: true, filter: true,
+      cellStyle: params => params.value === "High" ? {color: 'red'} : {color: 'black'} }
   ]
 
   return (
@@ -28,6 +40,7 @@ function Todolist() {
       <input type="text" onChange={inputChanged} placeholder="Date" name="date" value={todo.date}/>
       <input type="text" onChange={inputChanged} placeholder="Priority" name="priority" value={todo.priority}/>
       <button onClick={addTodo}>Add</button>
+      <button onClick={deleteTodo}>Delete</button>
       <div
         className="ag-theme-material"
         style={{
@@ -36,6 +49,9 @@ function Todolist() {
         margin: 'auto'}}
       >
         <AgGridReact
+          ref={gridRef}
+          onGridReady={ params => gridRef.current = params.api }
+          rowSelection='single'
           columnDefs={columns}
           rowData={todos}
         >  
